@@ -47,11 +47,11 @@ namespace CPUD8080 {
 
 		if (arg1 != null && arg2 != null) {
 			let d16 = toHex2(arg2) + toHex2(arg1);
-			s = s.replace('#1', `$${d16}`);
+			s = s.replace("*", `$${d16}`);
 		}
 		else if (arg1 != null) {
 			let d8 = toHex2(arg1);
-			s = s.replace('%1', `$${d8}`);
+			s = s.replace("%", `$${d8}`);
 		}
 
 		return [s, l];
