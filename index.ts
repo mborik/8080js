@@ -38,10 +38,34 @@
 //----------------------------------------------------------------------------
 import Cpu8080 from "./cpu8080";
 
-export module CPU8080 {
-	let proc: Cpu8080;
+namespace CPU8080 {
+	let traceEnabled: boolean = false;
+	let proc: Cpu8080 = null;
 
-	function init(bt, ba, tck, porto, porti) {
+	export function init(bt, ba, porto, porti) {
 		proc = new Cpu8080(bt, ba, porto, porti);
 	}
-};
+
+	export function steps(Ts: number) {
+		while (Ts > 0) {
+			Ts -= proc.step();
+
+			if (traceEnabled) {
+				this.tracer(proc);
+			}
+		}
+	}
+
+	export const T = (() => proc && proc.T);
+	export const set = ((r, v) => proc && proc.set(r, v));
+	export const reset = (() => proc && proc.reset());
+	export const status = (() => proc && proc.status());
+	export const flagsToString = (() => proc && proc.flagsToString());
+	export const interrupt = ((vector) => proc && proc.interrupt(vector));
+
+	export const trace = ((state) => traceEnabled = state);
+	export const tracer = ((processorInstance: Cpu8080) => {});
+}
+
+declare var global: any;
+(window || global)["CPU8080"] = CPU8080;

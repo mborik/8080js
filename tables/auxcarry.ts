@@ -4,6 +4,6 @@
 // of second argument and '1' is bit3 of first argument (A register).
 const AC: number = 0x10;
 export const auxcarryTable = {
-	'add': [0, AC, AC, AC, 0, 0, 0, AC],
-	'sub': [AC, AC, 0, AC, 0, AC, 0, 0]
+	"add": [0, AC, AC, AC, 0, 0, 0, AC],
+	"sub": [AC, AC, 0, AC, 0, AC, 0, 0]
 };

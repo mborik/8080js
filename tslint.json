@@ -1,0 +1,46 @@
+{
+	"rules": {
+		"comment-format": [true],
+		"indent": [true,"tabs"],
+		"eofline": true,
+		"curly": true,
+		"one-line": [true,
+			"check-open-brace",
+			"check-whitespace"
+		],
+		"quotemark": [true,
+			"double",
+			"avoid-escape"
+		],
+		"triple-equals": [false],
+		"semicolon": [true, "always", "ignore-bound-class-methods"],
+		"variable-name": [true, "ban-keywords", "allow-leading-underscore"],
+		"whitespace": [true,
+			"check-branch",
+			"check-decl",
+			"check-operator",
+			"check-module",
+			"check-separator",
+			"check-type"
+		],
+		"typeof-compare": true,
+		"typedef-whitespace": [true, {
+			"call-signature": "nospace",
+			"index-signature": "nospace",
+			"parameter": "nospace",
+			"property-declaration": "nospace",
+			"variable-declaration": "nospace"
+		}],
+		"space-before-function-paren": [true, "never"],
+		"arrow-return-shorthand": true,
+		"no-duplicate-variable": true,
+		"no-eval": true,
+		"no-var-keyword": true,
+		"no-internal-module": true,
+		"no-trailing-whitespace": true,
+		"no-consecutive-blank-lines": [true, 2],
+		"prefer-const": false,
+		"no-unnecessary-initializer": true,
+		"object-literal-key-quotes": [true, "consistent"]
+	}
+}

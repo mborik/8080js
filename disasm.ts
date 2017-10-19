@@ -40,8 +40,8 @@ import mnemo from "./tables/mnemonics";
 import lengths from "./tables/length";
 import { toHex2 } from "./utils";
 
-export module CPUD8080 {
-	function disasm(instr, arg1?, arg2?) {
+namespace CPUD8080 {
+	export function disasm(instr, arg1?, arg2?) {
 		let s: string = mnemo[instr];
 		let l: number = lengths[instr];
 
@@ -56,4 +56,7 @@ export module CPUD8080 {
 
 		return [s, l];
 	}
-};
+}
+
+declare var global: any;
+(window || global)["CPUD8080"] = CPUD8080;

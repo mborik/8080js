@@ -1,25 +1,13 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
-		"outFile": "index.js",
-		"sourceMap": false,
 		"target": "es5",
-		"module": "amd",
+		"module": "commonjs",
+		"sourceMap": false,
 		"declaration": false,
 		"noImplicitAny": false,
 		"removeComments": true,
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true,
-		"moduleResolution": "node",
-		"lib": [
-			"es2015",
-			"dom"
-		]
+		"moduleResolution": "node"
 	},
-	"files": [
-		"index.ts",
-		"disasm.ts"
-	],
 	"exclude": [
 		"node_modules",
 		"test"

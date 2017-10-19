@@ -43,13 +43,11 @@ import flagTable from "./tables/flags";
 import durationTable from "./tables/duration";
 import { auxcarryTable } from "./tables/auxcarry";
 
-declare const {
-	CARRY = 0x01,
-	PARITY = 0x04,
-	AUXCARRY = 0x10,
-	ZERO = 0x40,
-	SIGN = 0x80
-};
+const CARRY = 0x01;
+const PARITY = 0x04;
+const AUXCARRY = 0x10;
+const ZERO = 0x40;
+const SIGN = 0x80;
 //----------------------------------------------------------------------------
 export default class Cpu8080 {
 	// registers
@@ -101,6 +99,21 @@ export default class Cpu8080 {
 		this.f &= ~flag & 0xff;
 	}
 
+	public set(reg: string, value: number): void {
+		const regMap = [
+			"a", "f", "af",
+			"b", "c", "bc",
+			"d", "e", "de",
+			"h", "l", "hl",
+			"pc", "sp"
+		];
+
+		reg = reg.toLowerCase();
+		if (~regMap.indexOf(reg)) {
+			this[reg] = value;
+		}
+	}
+
 	// interrupt states
 	private inte: boolean = false;
 	private halted: boolean = false;
@@ -137,7 +150,6 @@ export default class Cpu8080 {
 		let inT = this.cycles;
 
 		this.execute(i);
-		this.pc &= 0xffff;
 		this.processInterrupts();
 
 		return this.cycles - inT;
@@ -172,7 +184,7 @@ export default class Cpu8080 {
 	private getWord(addr: number): number {
 		let l = this.onByteRead(addr & 0xffff);
 		let h = this.onByteRead(++addr & 0xffff);
-		return h << 8 | l;
+		return (h << 8 | l) & 0xffff;
 	}
 
 	private nextByte(): number {
@@ -222,7 +234,7 @@ export default class Cpu8080 {
 	}
 
 	private acSUB(a1: number, a2: number, r: number): void {
-		var dis = (r & 8) >> 1 | (a2 & 8) >> 2 | (a1 & 8) >> 3;
+		let dis = (r & 8) >> 1 | (a2 & 8) >> 2 | (a1 & 8) >> 3;
 		this.f = this.f & ~AUXCARRY | auxcarryTable.sub[dis];
 	}
 
@@ -1725,7 +1737,7 @@ export default class Cpu8080 {
 			case 0xF8:
 				if (this.f & SIGN) {
 					this.pc = this.pop();
-					jump = true
+					jump = true;
 				}
 				break;
 
@@ -1782,7 +1794,7 @@ export default class Cpu8080 {
 
 //----------------------------------------------------------------------------
 	public flagsToString(): string {
-		let result = '', fx = "SZ0A0P1C";
+		let result = "", fx = "SZ0A0P1C";
 		for (let i = 0; i < 8; i++) {
 			if (this.f & (0x80 >> i)) {
 				result += fx[i];
@@ -1804,7 +1816,7 @@ export default class Cpu8080 {
 			pc: toHex4(this.pc),
 			sp: toHex4(this.sp),
 			flags: this.flagsToString()
-		}, null, '\t');
+		}, null, "\t");
 	}
 
 	public status() {

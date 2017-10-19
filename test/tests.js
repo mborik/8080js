@@ -1,7 +1,3 @@
-module("Syntax and coding standards");
-
-jsHintTest( "JSHint", "../8080.js");
-
 module("Basic tests");
 
 test( "Namespace", function() {
@@ -43,15 +39,15 @@ module("Disassembler");
 
 test ("NOP, just NOPs", function() {
 	var d = CPUD8080.disasm(0,0,0,0,0);
-	equal( d[0], "NOP", "Instruction decoded OK");	
-	equal( d[1], 1, "Instruction length OK");	
+	equal( d[0], "NOP", "Instruction decoded OK");
+	equal( d[1], 1, "Instruction length OK");
 });
 
 
 test ("XRA A", function() {
 	var d = CPUD8080.disasm(0xaf,0,0,0,0);
-	equal( d[0], "XRA A", "Instruction decoded OK");	
-	equal( d[1], 1, "Instruction length OK");	
+	equal( d[0], "XRA A", "Instruction decoded OK");
+	equal( d[1], 1, "Instruction length OK");
 });
 
 module("Single step", {
@@ -63,15 +59,15 @@ module("Single step", {
 
 test ("NOP, just NOPs", function() {
 	CPU8080.steps(1);
-	equal( CPU8080.status().pc, 0x0001, "NOP OK");	
-	equal( CPU8080.T(), 4, "Timing OK");	
+	equal( CPU8080.status().pc, 0x0001, "NOP OK");
+	equal( CPU8080.T(), 4, "Timing OK");
 });
 
 test ("RST7", function() {
 	CPU8080.init(function(a,v){;}, function(addr){return 0xff;});
 	CPU8080.steps(1);
-	equal( CPU8080.status().pc, 0x0038, "RST7 OK");	
-	equal( CPU8080.T(), 11, "Timing OK");	
+	equal( CPU8080.status().pc, 0x0038, "RST7 OK");
+	equal( CPU8080.T(), 11, "Timing OK");
 });
 
 
