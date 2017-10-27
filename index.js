@@ -25,8 +25,8 @@ var Cpu8080 = (function () {
         this.h = 0;
         this.l = 0;
         this.a = 0;
-        this.pc = 0;
-        this.sp = 0xF000;
+        this._pc = 0;
+        this._sp = 0xF000;
         this.inte = false;
         this.halted = false;
         this.cycles = 0;
@@ -76,6 +76,26 @@ var Cpu8080 = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Cpu8080.prototype, "pc", {
+        get: function () {
+            return this._pc;
+        },
+        set: function (n) {
+            this._pc = n & 0xffff;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Cpu8080.prototype, "sp", {
+        get: function () {
+            return this._sp;
+        },
+        set: function (n) {
+            this._sp = n & 0xffff;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Cpu8080.prototype.flagSet = function (flag) {
         this.f |= flag;
     };
@@ -92,7 +112,12 @@ var Cpu8080 = (function () {
         ];
         reg = reg.toLowerCase();
         if (~regMap.indexOf(reg)) {
-            this[reg] = value;
+            if (reg.length === 2) {
+                this["_" + reg] = value & 0xffff;
+            }
+            else {
+                this[reg] = value & 0xff;
+            }
         }
     };
     Object.defineProperty(Cpu8080.prototype, "T", {
@@ -101,8 +126,8 @@ var Cpu8080 = (function () {
         configurable: true
     });
     Cpu8080.prototype.reset = function () {
-        this.pc = 0;
-        this.sp = 0;
+        this._pc = 0;
+        this._sp = 0;
         this.a = this.b = this.c = this.d = this.e = this.h = this.l = 0;
         this.f = 0x02;
         this.inte = false;
@@ -124,8 +149,8 @@ var Cpu8080 = (function () {
         if (vector === void 0) { vector = 0x38; }
         if (this.inte) {
             this.halted = false;
-            this.push(this.pc);
-            this.pc = vector & 0xffff;
+            this.push(this._pc);
+            this.pc = vector;
         }
     };
     Cpu8080.prototype.writePort = function (port, v) {
@@ -148,16 +173,16 @@ var Cpu8080 = (function () {
         return (h << 8 | l) & 0xffff;
     };
     Cpu8080.prototype.nextByte = function () {
-        var pc = this.pc;
+        var pc = this._pc;
         var ret = this.onByteRead(pc & 0xffff);
-        this.pc = ++pc & 0xffff;
+        this.pc = ++pc;
         return ret & 0xff;
     };
     Cpu8080.prototype.nextWord = function () {
-        var pc = this.pc;
+        var pc = this._pc;
         var l = this.onByteRead(pc & 0xffff);
         var h = this.onByteRead(++pc & 0xffff);
-        this.pc = ++pc & 0xffff;
+        this.pc = ++pc;
         return (h << 8 | l) & 0xffff;
     };
     Cpu8080.prototype.writeByte = function (addr, value) {
@@ -267,13 +292,13 @@ var Cpu8080 = (function () {
         return r & 0xffff;
     };
     Cpu8080.prototype.pop = function () {
-        var pc = this.getWord(this.sp);
-        this.sp = (this.sp + 2) & 0xffff;
+        var pc = this.getWord(this._sp);
+        this.sp += 2;
         return pc;
     };
     Cpu8080.prototype.push = function (v) {
-        this.sp = (this.sp - 2) & 0xffff;
-        this.writeWord(this.sp, v);
+        this.sp += 0xfffe;
+        this.writeWord(this._sp, v);
     };
     Cpu8080.prototype.processInterrupts = function () {
     };
@@ -292,7 +317,7 @@ var Cpu8080 = (function () {
                 this.writeByte(this.bc, this.a);
                 break;
             case 0x03:
-                this.bc = (this.bc + 1) & 0xffff;
+                this.bc++;
                 break;
             case 0x04:
                 this.b = this.incrementByte(this.b);
@@ -322,7 +347,7 @@ var Cpu8080 = (function () {
                 this.a = this.onByteRead(this.bc);
                 break;
             case 0x0B:
-                this.bc = (this.bc + 0xffff) & 0xffff;
+                this.bc += 0xffff;
                 break;
             case 0x0C:
                 this.c = this.incrementByte(this.c);
@@ -352,7 +377,7 @@ var Cpu8080 = (function () {
                 this.writeByte(this.de, this.a);
                 break;
             case 0x13:
-                this.de = (this.de + 1) & 0xffff;
+                this.de++;
                 break;
             case 0x14:
                 this.d = this.incrementByte(this.d);
@@ -382,7 +407,7 @@ var Cpu8080 = (function () {
                 this.a = this.onByteRead(this.de);
                 break;
             case 0x1B:
-                this.de = (this.de - 1) & 0xffff;
+                this.de += 0xffff;
                 break;
             case 0x1C:
                 this.e = this.incrementByte(this.e);
@@ -412,7 +437,7 @@ var Cpu8080 = (function () {
                 this.writeWord(this.nextWord(), this.hl);
                 break;
             case 0x23:
-                this.hl = (this.hl + 1) & 0xffff;
+                this.hl++;
                 break;
             case 0x24:
                 this.h = this.incrementByte(this.h);
@@ -444,7 +469,7 @@ var Cpu8080 = (function () {
                 this.hl = this.getWord(this.nextWord());
                 break;
             case 0x2B:
-                this.hl = (this.hl - 1) & 0xffff;
+                this.hl += 0xffff;
                 break;
             case 0x2C:
                 this.l = this.incrementByte(this.l);
@@ -465,7 +490,7 @@ var Cpu8080 = (function () {
                 this.writeByte(this.nextWord(), this.a);
                 break;
             case 0x33:
-                this.sp = ((this.sp + 1) & 0xFFFF);
+                this.sp++;
                 break;
             case 0x34:
                 w = this.hl;
@@ -488,7 +513,7 @@ var Cpu8080 = (function () {
                 this.a = this.onByteRead(this.nextWord());
                 break;
             case 0x3B:
-                this.sp = (this.sp + 0xffff) & 0xffff;
+                this.sp += 0xffff;
                 break;
             case 0x3C:
                 this.a = this.incrementByte(this.a);
@@ -888,7 +913,7 @@ var Cpu8080 = (function () {
                 break;
             case 0xC0:
                 if (!(this.f & ZERO)) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
@@ -897,24 +922,24 @@ var Cpu8080 = (function () {
                 break;
             case 0xC2:
                 if (this.f & ZERO) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 break;
             case 0xC3:
             case 0xCB:
-                this.pc = this.getWord(this.pc);
+                this._pc = this.getWord(this._pc);
                 break;
             case 0xC4:
                 if (this.f & ZERO) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 break;
@@ -925,36 +950,36 @@ var Cpu8080 = (function () {
                 this.a = this.addByte(this.a, this.nextByte());
                 break;
             case 0xC7:
-                this.push(this.pc);
-                this.pc = 0;
+                this.push(this._pc);
+                this._pc = 0;
                 break;
             case 0xC8:
                 if (this.f & ZERO) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
             case 0xC9:
             case 0xD9:
-                this.pc = this.pop();
+                this._pc = this.pop();
                 break;
             case 0xCA:
                 if (this.f & ZERO) {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xCC:
                 if (this.f & ZERO) {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xCD:
@@ -962,19 +987,19 @@ var Cpu8080 = (function () {
             case 0xED:
             case 0xFD:
                 w = this.nextWord();
-                this.push(this.pc);
-                this.pc = w;
+                this.push(this._pc);
+                this._pc = w;
                 break;
             case 0xCE:
                 this.a = this.addByteWithCarry(this.a, this.nextByte());
                 break;
             case 0xCF:
-                this.push(this.pc);
-                this.pc = 0x08;
+                this.push(this._pc);
+                this._pc = 0x08;
                 break;
             case 0xD0:
                 if (!(this.f & CARRY)) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
@@ -983,10 +1008,10 @@ var Cpu8080 = (function () {
                 break;
             case 0xD2:
                 if (this.f & CARRY) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 break;
             case 0xD3:
@@ -994,12 +1019,12 @@ var Cpu8080 = (function () {
                 break;
             case 0xD4:
                 if (this.f & CARRY) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 break;
@@ -1010,21 +1035,21 @@ var Cpu8080 = (function () {
                 this.a = this.subtractByte(this.a, this.nextByte());
                 break;
             case 0xD7:
-                this.push(this.pc);
-                this.pc = 0x10;
+                this.push(this._pc);
+                this._pc = 0x10;
                 break;
             case 0xD8:
                 if (this.f & CARRY) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
             case 0xDA:
                 if (this.f & CARRY) {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xDB:
@@ -1033,24 +1058,24 @@ var Cpu8080 = (function () {
             case 0xDC:
                 if (this.f & CARRY) {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xDE:
                 this.a = this.subtractByteWithCarry(this.a, this.nextByte());
                 break;
             case 0xDF:
-                this.push(this.pc);
-                this.pc = 0x18;
+                this.push(this._pc);
+                this._pc = 0x18;
                 break;
             case 0xE0:
                 if (!(this.f & PARITY)) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
@@ -1059,25 +1084,25 @@ var Cpu8080 = (function () {
                 break;
             case 0xE2:
                 if (this.f & PARITY) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 break;
             case 0xE3:
-                w = this.getWord(this.sp);
-                this.writeWord(this.sp, this.hl);
+                w = this.getWord(this._sp);
+                this.writeWord(this._sp, this.hl);
                 this.hl = w;
                 break;
             case 0xE4:
                 if (this.f & PARITY) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 break;
@@ -1088,12 +1113,12 @@ var Cpu8080 = (function () {
                 this.a = this.andByte(this.a, this.nextByte());
                 break;
             case 0xE7:
-                this.push(this.pc);
-                this.pc = 0x20;
+                this.push(this._pc);
+                this._pc = 0x20;
                 break;
             case 0xE8:
                 if (this.f & PARITY) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
@@ -1102,10 +1127,10 @@ var Cpu8080 = (function () {
                 break;
             case 0xEA:
                 if (this.f & PARITY) {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xEB:
@@ -1116,24 +1141,24 @@ var Cpu8080 = (function () {
             case 0xEC:
                 if (this.f & PARITY) {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xEE:
                 this.a = this.xorByte(this.a, this.nextByte());
                 break;
             case 0xEF:
-                this.push(this.pc);
-                this.pc = 0x28;
+                this.push(this._pc);
+                this._pc = 0x28;
                 break;
             case 0xF0:
                 if (!(this.f & SIGN)) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
@@ -1142,10 +1167,10 @@ var Cpu8080 = (function () {
                 break;
             case 0xF2:
                 if (this.f & SIGN) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 break;
             case 0xF3:
@@ -1153,12 +1178,12 @@ var Cpu8080 = (function () {
                 break;
             case 0xF4:
                 if (this.f & SIGN) {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 else {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 break;
@@ -1169,12 +1194,12 @@ var Cpu8080 = (function () {
                 this.a = this.orByte(this.a, this.nextByte());
                 break;
             case 0xF7:
-                this.push(this.pc);
-                this.pc = 0x30;
+                this.push(this._pc);
+                this._pc = 0x30;
                 break;
             case 0xF8:
                 if (this.f & SIGN) {
-                    this.pc = this.pop();
+                    this._pc = this.pop();
                     jump = true;
                 }
                 break;
@@ -1183,10 +1208,10 @@ var Cpu8080 = (function () {
                 break;
             case 0xFA:
                 if (this.f & SIGN) {
-                    this.pc = this.nextWord();
+                    this._pc = this.nextWord();
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xFB:
@@ -1195,20 +1220,20 @@ var Cpu8080 = (function () {
             case 0xFC:
                 if (this.f & SIGN) {
                     w = this.nextWord();
-                    this.push(this.pc);
-                    this.pc = w;
+                    this.push(this._pc);
+                    this._pc = w;
                     jump = true;
                 }
                 else {
-                    this.pc = (this.pc + 2) & 0xffff;
+                    this.pc += 2;
                 }
                 break;
             case 0xFE:
                 this.subtractByte(this.a, this.nextByte());
                 break;
             case 0xFF:
-                this.push(this.pc);
-                this.pc = 0x38;
+                this.push(this._pc);
+                this._pc = 0x38;
                 break;
         }
         this.f &= 0xd7;
@@ -1229,19 +1254,19 @@ var Cpu8080 = (function () {
     };
     Cpu8080.prototype.toString = function () {
         return JSON.stringify({
+            pc: utils_1.toHex4(this._pc),
+            sp: utils_1.toHex4(this._sp),
             af: utils_1.toHex4(this.af),
             bc: utils_1.toHex4(this.bc),
             de: utils_1.toHex4(this.de),
             hl: utils_1.toHex4(this.hl),
-            pc: utils_1.toHex4(this.pc),
-            sp: utils_1.toHex4(this.sp),
             flags: this.flagsToString()
         }, null, "\t");
     };
     Cpu8080.prototype.status = function () {
         var result = {
-            "pc": this.pc,
-            "sp": this.sp,
+            "pc": this._pc,
+            "sp": this._sp,
             "a": this.a, "f": this.f,
             "b": this.b, "c": this.c,
             "d": this.d, "e": this.e,
